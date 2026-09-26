@@ -1,0 +1,130 @@
+// PGLife schema, introspected from the live MySQL 8 database that the original
+// PHP application used, so the Node port keeps reading the same data.
+//
+// The only deliberate addition over that database is `property_images` (see the
+// "Migrating from the PHP version" section of the README): the PHP app discovered
+// photos by globbing a directory on every request. Storing the paths keeps the
+// API self-describing and makes image order explicit.
+//
+// `created_at` / `updated_at` were intentionally *not* added to `users`. The
+// live table has no such columns, nothing in the UI renders a join date, and
+// inventing NOT NULL columns without defaults would break the existing INSERTs.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// The live `gender` columns are VARCHAR(10) and `amenities.type` is VARCHAR(50),
+// not native ENUMs, so these are modelled as constrained strings rather than
+// Prisma enums. Using an enum here would make Prisma expect a MySQL ENUM column
+// and report permanent drift against the real schema.
+model User {
+  id          Int    @id @default(autoincrement())
+  email       String @unique(map: "email") @db.VarChar(255)
+  password    String @db.VarChar(255)
+  fullName    String @map("full_name") @db.VarChar(255)
+  phone       String @db.VarChar(20)
+  gender      String @db.VarChar(10)
+  collegeName String @map("college_name") @db.VarChar(255)
+
+  interestedIn InterestedUserProperty[]
+
+  @@map("users")
+}
+
+model City {
+  id   Int    @id @default(autoincrement())
+  name String @unique(map: "name") @db.VarChar(255)
+
+  properties Property[]
+
+  @@map("cities")
+}
+
+model Property {
+  id           Int     @id @default(autoincrement())
+  cityId       Int     @map("city_id")
+  name         String  @db.VarChar(255)
+  address      String  @db.Text
+  gender       String  @db.VarChar(10)
+  rent         Int
+  ratingClean  Decimal @default(0) @map("rating_clean") @db.Decimal(2, 1)
+  ratingFood   Decimal @default(0) @map("rating_food") @db.Decimal(2, 1)
+  ratingSafety Decimal @default(0) @map("rating_safety") @db.Decimal(2, 1)
+  description  String? @db.Text
+
+  city         City                     @relation(fields: [cityId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  amenities    PropertyAmenity[]
+  images       PropertyImage[]
+  testimonials Testimonial[]
+  interestedBy InterestedUserProperty[]
+
+  @@index([cityId], map: "city_id")
+  @@index([name], map: "properties_name_idx")
+  @@map("properties")
+}
+
+model Amenity {
+  id   Int    @id @default(autoincrement())
+  name String @db.VarChar(255)
+  type String @db.VarChar(50)
+  icon String @db.VarChar(255)
+
+  properties PropertyAmenity[]
+
+  @@map("amenities")
+}
+
+model PropertyAmenity {
+  propertyId Int @map("property_id")
+  amenityId  Int @map("amenity_id")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  amenity  Amenity  @relation(fields: [amenityId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([propertyId, amenityId])
+  @@index([amenityId], map: "amenity_id")
+  @@map("properties_amenities")
+}
+
+model Testimonial {
+  id         Int    @id @default(autoincrement())
+  propertyId Int    @map("property_id")
+  userName   String @map("user_name") @db.VarChar(255)
+  content    String @db.Text
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([propertyId], map: "property_id")
+  @@map("testimonials")
+}
+
+model InterestedUserProperty {
+  userId     Int @map("user_id")
+  propertyId Int @map("property_id")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userId, propertyId])
+  @@index([propertyId], map: "property_id")
+  @@map("interested_users_properties")
+}
+
+// Not present in the original database — added by migration 1_add_property_images.
+model PropertyImage {
+  id         Int    @id @default(autoincrement())
+  propertyId Int    @map("property_id")
+  src        String @db.VarChar(500)
+  position   Int    @default(0)
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId, position], map: "property_id")
+  @@map("property_images")
+}

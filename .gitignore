@@ -1,9 +1,33 @@
-# Environment files
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment — never commit real credentials
 .env
 .env.local
 .env.*.local
+!.env.example
 
-# IDE
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# Testing
+coverage/
+
+# Editors
 .idea/
 .vscode/
 *.swp
@@ -13,13 +37,6 @@
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
-logs/
-
-# Database
+# Local databases
 *.sqlite
 *.db
-
-# Uploads (if any user uploads)
-uploads/
