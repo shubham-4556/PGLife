@@ -1,0 +1,22 @@
+{
+  "name": "pglife",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PG Life — property rental platform. Next.js frontend + Express/Prisma API on PostgreSQL.",
+  "scripts": {
+    "dev": "concurrently -n api,web -c magenta,cyan \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm --prefix api run dev",
+    "dev:web": "npm --prefix web run dev",
+    "build": "npm --prefix web run build && npm --prefix api run build",
+    "start": "concurrently -n api,web -c magenta,cyan \"npm:start:api\" \"npm:start:web\"",
+    "start:api": "npm --prefix api run start",
+    "start:web": "npm --prefix web run start",
+    "lint": "npm --prefix web run lint && npm --prefix api run typecheck",
+    "typecheck": "npm --prefix web run typecheck && npm --prefix api run typecheck",
+    "db:setup": "npm --prefix api run prisma:migrate && npm --prefix api run seed",
+    "db:studio": "npm --prefix api run prisma:studio"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

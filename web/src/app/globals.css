@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  /* Palette carried over from the original Bootstrap-era stylesheet. */
+  --color-brand: #ea322e;
+  --color-brand-dark: #c9262a;
+  --color-brand-tint: #fdeceb;
+  --color-accent: #66c2bd;
+  --color-accent-dark: #479a95;
+  --color-ink: #2f2e2e;
+  --color-muted: #6f6f6f;
+  --color-line: #e4e4e4;
+  --color-surface: #fcfaf7;
+  --color-charcoal: #343a40;
+
+  --font-sans: "Open Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --shadow-card: 0 2px 5px 0 rgb(0 0 0 / 0.16), 0 2px 10px 0 rgb(0 0 0 / 0.12);
+  --shadow-card-hover: 0 5px 11px 0 rgb(0 0 0 / 0.18), 0 4px 15px 0 rgb(0 0 0 / 0.15);
+}
+
+/*
+ * `inline` keeps the reference to the next/font CSS variable intact, so the
+ * self-hosted Open Sans that layout.tsx loads is what `font-sans` resolves to.
+ */
+@theme inline {
+  --font-sans: var(--font-open-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-surface font-sans text-ink antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-brand outline-2 outline-offset-2;
+  }
+}
+
+/*
+ * Tailwind v4 requires `@utility` (not `@layer components`) for classes that are
+ * referenced by `@apply` elsewhere in this file.
+ */
+
+@utility page-container {
+  @apply mx-auto w-full max-w-6xl px-4;
+}
+
+@utility card-shadow {
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease-in-out;
+
+  &:hover,
+  &:focus-within {
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+@utility btn {
+  @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2
+    text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility btn-primary {
+  @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-brand px-4 py-2
+    text-sm font-semibold text-white transition-colors hover:bg-brand-dark
+    disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility btn-secondary {
+  @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-charcoal px-4 py-2
+    text-sm font-semibold text-white transition-colors hover:bg-black
+    disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility btn-outline {
+  @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-line
+    bg-white px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-brand
+    hover:text-brand disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility nav-link {
+  @apply inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 font-semibold
+    text-ink transition-colors hover:text-brand disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility field {
+  @apply w-full rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink
+    placeholder:text-muted/70 focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none;
+}
+
+@utility field-invalid {
+  @apply border-brand bg-brand-tint/40 focus:ring-brand/30;
+}

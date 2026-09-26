@@ -1,397 +1,502 @@
-# PG Life - Property Rental Platform
+# PG Life — Property Rental Platform
 
-A comprehensive PHP-based web application for finding and managing Paying Guest (PG) accommodations across major Indian cities.
+A web application for finding and managing Paying Guest (PG) accommodations across
+major Indian cities.
 
-## 📋 Table of Contents
+The original project was PHP + MySQL. It has been migrated to **Next.js (React) for the
+frontend**, **Express + Prisma for the backend**, and **MySQL 8** for the database.
 
-- [Overview](#overview)
-- [Features](#features)
+---
+
+## Table of Contents
+
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Setup](#setup)
+- [Environment Variables](#environment-variables)
+- [Running the App](#running-the-app)
 - [Database Schema](#database-schema)
-- [Installation & Setup](#installation--setup)
-- [Usage](#usage)
 - [API Endpoints](#api-endpoints)
-- [Screenshots](#screenshots)
-- [Contributing](#contributing)
+- [Scripts](#scripts)
+- [Migrating from the PHP version](#migrating-from-the-php-version)
+- [Security Notes](#security-notes)
 - [License](#license)
 
 ---
 
-## 🎯 Overview
+## Tech Stack
 
-**PG Life** is a property rental platform designed to help students and working professionals find suitable PG accommodations in major Indian cities. The platform provides an intuitive interface for browsing properties, viewing detailed information, managing favorites, and user authentication.
+### Frontend — `web/`
 
-### Key Highlights
+| Technology | Version | Purpose |
+|---|---|---|
+| Next.js | 16.x | App Router, server components, routing |
+| React | 19.x | UI runtime |
+| TypeScript | 5.x | Type safety |
+| Tailwind CSS | 4.x | Styling |
+| react-icons | 5.x | Icons (Font Awesome 5 set, same as before) |
 
-- **Multi-city Support**: Delhi, Mumbai, Bengaluru, Hyderabad, Chennai
-- **Property Categories**: Male, Female, and Unisex PGs
-- **Rich Property Details**: Images, amenities, ratings, testimonials
-- **User Dashboard**: Track interested properties and manage profile
-- **Responsive Design**: Works on desktop and mobile devices
+### Backend — `api/`
 
----
-
-## ✨ Features
-
-### For Users
-
-| Feature | Description |
-|---------|-------------|
-| **City-based Search** | Browse PGs by major Indian cities |
-| **Property Listings** | View all available properties with photos, rent, ratings |
-| **Advanced Filtering** | Filter by gender (Male/Female/Unisex), sort by rent |
-| **Property Details** | Comprehensive view with carousel, amenities, ratings, testimonials |
-| **Interest Tracking** | Heart/favorite properties to track interest |
-| **User Dashboard** | Personal profile and saved properties |
-| **Authentication** | Secure signup/login with session management |
-
-### Property Information Includes
-
-- **Image Carousel** - Multiple property photos
-- **Ratings** - Cleanliness, Food Quality, Safety (1-5 stars)
-- **Amenities** - Categorized by Building, Common Area, Bedroom, Washroom
-- **Testimonials** - Reviews from previous residents
-- **Description** - Detailed property information
-- **Gender-specific** - Male, Female, or Unisex accommodations
-
----
-
-## 🛠 Tech Stack
-
-### Backend
-- **PHP 7.4+** - Server-side scripting
-- **MySQL/MariaDB** - Relational database
-- **mysqli** - Database extension (prepared statements recommended for production)
-
-### Frontend
-- **HTML5** - Semantic markup
-- **CSS3** - Custom styling with responsive design
-- **Bootstrap 4** - CSS framework for responsive grid and components
-- **jQuery** - DOM manipulation and AJAX
-- **Font Awesome 5** - Icons
+| Technology | Version | Purpose |
+|---|---|---|
+| Node.js | 20+ | Runtime |
+| Express | 4.x | HTTP server and routing |
+| TypeScript | 5.x | Type safety |
+| Prisma | 6.x | ORM, migrations, type-safe client |
+| Zod | 3.x | Request validation |
+| bcryptjs | 2.x | Password hashing |
+| jsonwebtoken | 9.x | Session tokens |
+| Helmet / CORS / cookie-parser / morgan | — | Security, cross-origin, cookies, logging |
 
 ### Database
-- **MySQL** - Primary database
-- **Tables**: users, cities, properties, amenities, properties_amenities, testimonials, interested_users_properties
+
+- **MySQL** 8.0+ (developed against 8.0.46)
+- Tables: `users`, `cities`, `properties`, `property_images`, `amenities`,
+  `properties_amenities`, `testimonials`, `interested_users_properties`
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 PGLife/
-├── api/
-│   ├── login_submit.php      # User login handler
-│   └── signup_submit.php     # User registration handler
-├── css/
-│   ├── bootstrap.min.css     # Bootstrap framework
-│   ├── common.css            # Shared styles
-│   ├── dashboard.css         # Dashboard page styles
-│   ├── home.css              # Home page styles
-│   ├── property_detail.css   # Property detail page styles
-│   └── property_list.css     # Property listing page styles
-├── img/
-│   ├── amenities/            # Amenity icons (SVG)
-│   ├── properties/           # Property images (organized by property ID)
-│   ├── *.png                 # City images, icons, logos
-│   └── *.gif                 # Loading spinners
-├── includes/
-│   ├── database_connect.php  # Database connection
-│   ├── footer.php            # Footer template
-│   ├── header.php            # Header/navigation template
-│   ├── head_links.php        # Common head links (CSS, JS, meta)
-│   ├── login_modal.php       # Login modal template
-│   └── signup_modal.php      # Signup modal template
-├── js/
-│   ├── bootstrap.min.js      # Bootstrap JS
-│   └── jquery.js             # jQuery library
-├── index.php                 # Homepage with city search
-├── dashboard.php             # User dashboard (protected)
-├── property_list.php         # City-wise property listings
-├── property_detail.php       # Detailed property view
-├── logout.php                # Session destruction
-├── setup_database.sql        # Complete database schema + seed data
-└── favicon.ico               # Site favicon
+├── api/                              # Express + Prisma API
+│   ├── prisma/
+│   │   ├── schema.prisma             # Database schema
+│   │   ├── seed.ts                   # Seed data (ported from setup_database.sql)
+│   │   ├── property-images.json      # Image manifest, keyed by property id
+│   │   └── migrations/               # Generated by Prisma
+│   ├── src/
+│   │   ├── index.ts                  # Server entry point
+│   │   ├── app.ts                    # Express app wiring
+│   │   ├── config.ts                 # Validated environment config
+│   │   ├── lib/
+│   │   │   ├── prisma.ts             # Prisma client singleton
+│   │   │   ├── gender.ts             # Gender union + type guard
+│   │   │   └── serialize.ts          # Rating normalisation, response shaping
+│   │   ├── middleware/
+│   │   │   ├── auth.ts               # JWT cookie auth (requireAuth / optionalAuth)
+│   │   │   ├── errors.ts             # AppError helpers
+│   │   │   └── error.ts              # Error + 404 handlers, asyncHandler
+│   │   └── routes/
+│   │       ├── auth.ts               # /api/auth/*
+│   │       ├── cities.ts             # /api/cities
+│   │       ├── properties.ts         # /api/properties, /api/properties/:id
+│   │       ├── interests.ts          # /api/properties/:id/interested
+│   │       └── me.ts                 # /api/me/interested
+│   ├── .env.example
+│   └── package.json
+│
+├── web/                              # Next.js frontend
+│   ├── public/
+│   │   ├── img/                      # Property photos, city art, amenity icons
+│   │   └── ...
+│   └── src/
+│       ├── app/
+│       │   ├── layout.tsx            # Root layout, session-aware header
+│       │   ├── page.tsx              # Home: city search + major cities
+│       │   ├── error.tsx             # Global error boundary
+│       │   ├── not-found.tsx         # 404
+│       │   ├── properties/
+│       │   │   ├── page.tsx          # Listings with filter + sort
+│       │   │   └── [id]/page.tsx     # Property detail
+│       │   ├── dashboard/page.tsx    # Profile + interested properties (protected)
+│       │   ├── login/page.tsx
+│       │   └── signup/page.tsx
+│       ├── components/               # Header, footer, cards, forms, carousel…
+│       ├── hooks/use-auth-form.ts
+│       ├── lib/
+│       │   ├── api.ts                # Server-side API client (relays cookies)
+│       │   ├── api-client.ts         # Browser-side API client
+│       │   ├── format.ts             # Rent/rating/gender/amenity formatting
+│       │   └── site.ts               # API base URLs
+│       └── types/index.ts
+│   ├── .env.example
+│   └── package.json
+│
+└── package.json                      # Root scripts to run both apps
 ```
 
 ---
 
-## 🗄 Database Schema
+## Prerequisites
 
-### Tables
-
-#### `users`
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | INT | PRIMARY KEY, AUTO_INCREMENT |
-| email | VARCHAR(255) | UNIQUE, NOT NULL |
-| password | VARCHAR(255) | NOT NULL (SHA1 hashed) |
-| full_name | VARCHAR(255) | NOT NULL |
-| phone | VARCHAR(20) | NOT NULL |
-| gender | VARCHAR(10) | NOT NULL |
-| college_name | VARCHAR(255) | NOT NULL |
-
-#### `cities`
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | INT | PRIMARY KEY, AUTO_INCREMENT |
-| name | VARCHAR(255) | UNIQUE, NOT NULL |
-
-#### `properties`
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | INT | PRIMARY KEY, AUTO_INCREMENT |
-| city_id | INT | FOREIGN KEY → cities(id) |
-| name | VARCHAR(255) | NOT NULL |
-| address | TEXT | NOT NULL |
-| gender | VARCHAR(10) | NOT NULL (male/female/unisex) |
-| rent | INT | NOT NULL |
-| rating_clean | DECIMAL(2,1) | DEFAULT 0 |
-| rating_food | DECIMAL(2,1) | DEFAULT 0 |
-| rating_safety | DECIMAL(2,1) | DEFAULT 0 |
-| description | TEXT | NULL |
-
-#### `amenities`
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | INT | PRIMARY KEY, AUTO_INCREMENT |
-| name | VARCHAR(255) | NOT NULL |
-| type | VARCHAR(50) | NOT NULL (Building/Common Area/Bedroom/Washroom) |
-| icon | VARCHAR(255) | NOT NULL |
-
-#### `properties_amenities` (Junction Table)
-| Column | Type | Constraints |
-|--------|------|-------------|
-| property_id | INT | FOREIGN KEY → properties(id) |
-| amenity_id | INT | FOREIGN KEY → amenities(id) |
-| PRIMARY KEY | (property_id, amenity_id) | Composite |
-
-#### `testimonials`
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | INT | PRIMARY KEY, AUTO_INCREMENT |
-| property_id | INT | FOREIGN KEY → properties(id) |
-| user_name | VARCHAR(255) | NOT NULL |
-| content | TEXT | NOT NULL |
-
-#### `interested_users_properties` (Junction Table)
-| Column | Type | Constraints |
-|--------|------|-------------|
-| user_id | INT | FOREIGN KEY → users(id) |
-| property_id | INT | FOREIGN KEY → properties(id) |
-| PRIMARY KEY | (user_id, property_id) | Composite |
+- **Node.js** 20 or newer (developed on 22)
+- **npm** 10+
+- **MySQL** 8.0 or newer (developed on 8.0.46)
 
 ---
 
-## 🚀 Installation & Setup
+## Setup
 
-### Prerequisites
+### 1. Install dependencies
 
-- **Web Server**: Apache/Nginx with PHP support
-- **PHP**: 7.4 or higher
-- **MySQL/MariaDB**: 5.7 or higher
-- **Extensions**: mysqli, session
+```bash
+git clone https://github.com/shubham-4556/PGLife.git
+cd PGLife
 
-### Quick Start
+npm install                 # root tooling
+npm --prefix api install    # backend
+npm --prefix web install    # frontend
+```
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/shubham-4556/PGLife.git
-   cd PGLife
-   ```
+### 2. Create the MySQL database
 
-2. **Configure Database**
-   - Create a MySQL database
-   - Import the schema:
-     ```bash
-     mysql -u your_username -p < setup_database.sql
-     ```
-   - Or run the SQL directly in your MySQL client
+The rewrite runs against the **same MySQL database the PHP app used**, so if you
+already have it there is nothing to create:
 
-3. **Configure Database Connection**
-   Edit `includes/database_connect.php` with your credentials:
-   ```php
-   $conn = mysqli_connect("localhost", "username", "password", "pglife");
-   ```
+```bash
+mysql -u root -p -e "CREATE DATABASE pglife CHARACTER SET utf8mb4;"
+```
 
-4. **Set up Web Server**
-   - Point document root to the project directory
-   - Ensure PHP is enabled
-   - For Apache, ensure `mod_rewrite` is enabled (if using .htaccess)
+Only `utf8mb4` matters — the original schema relies on a case-insensitive
+collation, which is what lets `?city=delhi` match the city `Delhi`.
 
-5. **File Permissions** (Linux/Mac)
-   ```bash
-   chmod 755 img/properties/*/ -R
-   chmod 644 img/properties/*/* -R
-   ```
+### 3. Configure the environment
 
-6. **Access the Application**
-   - Open `http://localhost/PGLife/` in your browser
+```bash
+cp api/.env.example api/.env
+cp web/.env.example web/.env.local
+```
 
----
+Edit `api/.env` and set a real `DATABASE_URL` plus a `JWT_SECRET`:
 
-## 💻 Usage
+```env
+DATABASE_URL="mysql://root:your_password@127.0.0.1:3306/pglife"
+JWT_SECRET="<at least 32 random characters>"
+```
 
-### Homepage (`index.php`)
-- Search PGs by city name
-- Quick access to major cities (Delhi, Mumbai, Bengaluru, Hyderabad, Chennai)
-- Login/Signup modals
+Generate a secret with:
 
-### Property Listings (`property_list.php?city=<city_name>`)
-- View all properties in a selected city
-- Filter by gender type
-- Sort by rent (ascending/descending)
-- See interest count and ratings
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+```
 
-### Property Details (`property_detail.php?property_id=<id>`)
-- Full-screen image carousel
-- Complete amenities list (categorized)
-- Detailed ratings breakdown
-- Testimonials from residents
-- "Book Now" and "Heart/Interest" actions
+### 4. Create the schema and load seed data
 
-### Dashboard (`dashboard.php`)
-- **Requires login**
-- View profile information
-- Track all interested properties
-- Quick navigation to property details
+```bash
+npm run db:setup
+```
 
-### Authentication
-- **Signup**: Full name, phone, email, password, college, gender
-- **Login**: Email + password (SHA1 hashed)
-- Session-based authentication
+This runs `prisma migrate deploy` and then the seed script.
+
+`migrate deploy` is used rather than `migrate dev` on purpose. The database
+predates this rewrite, so `migrate dev` detects that its history does not match
+and offers to **reset** — which would drop the tables and every row in them.
+`migrate deploy` only ever applies pending migrations, and it brings a genuinely
+empty database fully up to date too, so the same command is safe in both cases.
+
+Migrations, in order:
+
+| Migration | What it does |
+|---|---|
+| `0_init` | The seven original tables, captured verbatim from the live schema. Recorded with `prisma migrate resolve --applied 0_init`, so adopting the existing database did not rewrite it. |
+| `1_add_property_images` | Adds `property_images`, an index on `properties.name`, and tightens the three rating columns to `NOT NULL`. |
+
+The seed is **idempotent** — it upserts on natural keys rather than deleting
+first, precisely so it can be run against a populated database without
+destroying anything. Against this database it is a no-op; against an empty one it
+inserts the 5 cities, 13 amenities, 10 properties, 102 property/amenity links,
+15 property images and 9 testimonials that the PHP version shipped with.
+
+> The image manifest in `api/prisma/property-images.json` lists 42 files across
+> all 37 `img/properties/<id>/` folders, but only properties 1–10 exist in the
+> database, so 15 image rows are seeded.
 
 ---
 
-## 🔌 API Endpoints
+## Environment Variables
 
-### POST `/api/signup_submit.php`
-Register a new user.
+### `api/.env`
 
-**Request Body** (form-data):
-| Field | Type | Required |
-|-------|------|----------|
-| full_name | string | Yes |
-| phone | string | Yes |
-| email | string | Yes |
-| password | string | Yes |
-| college_name | string | Yes |
-| gender | string (male/female/other) | Yes |
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `DATABASE_URL` | yes | — | MySQL connection string. Percent-encode the password, so `@` becomes `%40` |
+| `JWT_SECRET` | yes | — | Signing key, minimum 32 characters |
+| `PORT` | no | `4000` | Port the API listens on |
+| `NODE_ENV` | no | `development` | `development` \| `test` \| `production` |
+| `COOKIE_NAME` | no | `pglife_token` | Auth cookie name |
+| `CORS_ORIGINS` | no | `http://localhost:3000` | Comma-separated allowed origins |
 
-**Response**: HTML with success/error message
+### `web/.env.local`
 
-### POST `/api/login_submit.php`
-Authenticate user and create session.
-
-**Request Body** (form-data):
-| Field | Type | Required |
-|-------|------|----------|
-| email | string | Yes |
-| password | string | Yes |
-
-**Response**: Redirects to `index.php` on success, error message on failure
-
-### GET `/logout.php`
-Destroy session and redirect to homepage.
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `NEXT_PUBLIC_API_URL` | no | `http://localhost:4000` | API base URL used by the browser and server components |
+| `API_INTERNAL_URL` | no | falls back to the above | API URL for server components when it differs from the browser-facing one |
 
 ---
 
-## 🖼 Screenshots
+## Running the App
 
-### Homepage
-- City search with autocomplete
-- Major city cards for quick navigation
+Run both apps together from the repository root:
 
-### Property Listing
-- Grid of property cards with images
-- Star ratings and interest counts
-- Filter modal for gender selection
+```bash
+npm run dev
+```
 
-### Property Detail
-- Full-width image carousel
-- Amenities grouped by category
-- Three-criteria rating system
-- Testimonial carousel
+- Frontend: <http://localhost:3000>
+- API: <http://localhost:4000> (health check at `/api/health`)
 
-### Dashboard
-- User profile card
-- Saved/Interested properties grid
-- Quick view navigation
+Or run them separately in two terminals:
 
----
+```bash
+npm run dev:api
+npm run dev:web
+```
 
-## ⚠️ Security Considerations
+For a production build:
 
-> **Important**: This is a demonstration/educational project. For production use, implement the following:
-
-### Current Limitations
-- **Password Hashing**: Uses SHA1 (insecure) - upgrade to `password_hash()`/`password_verify()` (bcrypt/argon2)
-- **SQL Injection**: Direct string interpolation in queries - use prepared statements
-- **XSS Protection**: No output escaping - use `htmlspecialchars()` on all user data
-- **CSRF Protection**: No CSRF tokens on forms
-- **Session Security**: No secure/httponly cookie flags
-- **Input Validation**: Minimal server-side validation
-
-### Recommended Improvements
-```php
-// Prepared statement example
-$stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
-$stmt->bind_param("s", $email);
-$stmt->execute();
-
-// Password hashing
-$hash = password_hash($password, PASSWORD_ARGON2ID);
-if (password_verify($password, $hash)) { /* valid */ }
-
-// XSS prevention
-echo htmlspecialchars($user_input, ENT_QUOTES, 'UTF-8');
+```bash
+npm run build
+npm start
 ```
 
 ---
 
-## 🤝 Contributing
+## Database Schema
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/new-feature`
-3. Commit changes: `git commit -am 'Add new feature'`
-4. Push to branch: `git push origin feature/new-feature`
-5. Submit a Pull Request
+Reflects the live MySQL database, which was created by the original
+`setup_database.sql`. `SERIAL` below means MySQL `INT AUTO_INCREMENT`.
 
-### Development Guidelines
-- Follow PSR-12 coding standards for PHP
-- Maintain responsive design principles
-- Test across browsers (Chrome, Firefox, Safari, Edge)
-- Ensure mobile compatibility
+### `users`
+
+| Column | Type | Constraints |
+|---|---|---|
+| `id` | `SERIAL` | Primary key |
+| `email` | `VARCHAR(255)` | Unique, not null |
+| `password` | `VARCHAR(255)` | Not null — **bcrypt** hash |
+| `full_name` | `VARCHAR(255)` | Not null |
+| `phone` | `VARCHAR(20)` | Not null |
+| `gender` | `VARCHAR(10)` | `male` \| `female` \| `unisex`, validated in the API |
+| `college_name` | `VARCHAR(255)` | Not null |
+
+There are no `created_at` / `updated_at` columns. The original table has none and
+nothing in the UI renders a join date, so adding `NOT NULL` columns without
+defaults would only risk breaking existing inserts. The next schema change that
+needs them can add them as nullable.
+
+### `cities`
+
+| Column | Type | Constraints |
+|---|---|---|
+| `id` | `SERIAL` | Primary key |
+| `name` | `VARCHAR(255)` | Unique, not null |
+
+### `properties`
+
+| Column | Type | Constraints |
+|---|---|---|
+| `id` | `SERIAL` | Primary key |
+| `city_id` | `INT` | Foreign key → `cities(id)`, indexed |
+| `name` | `VARCHAR(255)` | Not null, indexed (added for search) |
+| `address` | `TEXT` | Not null |
+| `gender` | `VARCHAR(10)` | `male` \| `female` \| `unisex` |
+| `rent` | `INT` | Not null |
+| `rating_clean` | `DECIMAL(2,1)` | Not null, default `0` |
+| `rating_food` | `DECIMAL(2,1)` | Not null, default `0` |
+| `rating_safety` | `DECIMAL(2,1)` | Not null, default `0` |
+| `description` | `TEXT` | Nullable |
+
+Ratings hold a single decimal place (`DECIMAL(2,1)`), so the scale is 0.0–9.9.
+The overall score shown in listings is the mean of the three, rounded to one
+decimal.
+
+### `property_images`
+
+Replaces the old `glob("img/properties/$id/*")` directory scan.
+
+| Column | Type | Constraints |
+|---|---|---|
+| `id` | `SERIAL` | Primary key |
+| `property_id` | `INT` | Foreign key → `properties(id)`, cascade delete |
+| `src` | `VARCHAR(500)` | Public path, e.g. `/img/properties/1/abc.webp` |
+| `position` | `INT` | Carousel order, indexed with `property_id` |
+
+### `amenities`
+
+| Column | Type | Constraints |
+|---|---|---|
+| `id` | `SERIAL` | Primary key |
+| `name` | `VARCHAR(255)` | Not null |
+| `type` | `VARCHAR(50)` | `Building` \| `Common Area` \| `Bedroom` \| `Washroom` |
+| `icon` | `VARCHAR(255)` | Not null, matches `img/amenities/<icon>.svg` |
+
+`type` is a constrained `VARCHAR`, not a native MySQL `ENUM`, so that the
+datamodel matches the live table exactly. Note the space in `Common Area`.
+
+### `properties_amenities` (junction)
+
+Composite primary key `(property_id, amenity_id)`; `amenity_id` indexed.
+
+### `testimonials`
+
+| Column | Type | Constraints |
+|---|---|---|
+| `id` | `SERIAL` | Primary key |
+| `property_id` | `INT` | Foreign key → `properties(id)`, indexed |
+| `user_name` | `VARCHAR(255)` | Not null |
+| `content` | `TEXT` | Not null |
+
+### `interested_users_properties` (junction)
+
+Composite primary key `(user_id, property_id)`; `property_id` indexed to keep
+the per-property interest count cheap.
 
 ---
 
-## 📄 License
+## API Endpoints
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+All responses are JSON. Errors return `{ "error": string, "fields"?: object }`.
+
+### Auth
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/auth/signup` | — | Register. Returns `201` and sets the auth cookie. |
+| `POST` | `/api/auth/login` | — | Authenticate. Sets the auth cookie. |
+| `POST` | `/api/auth/logout` | — | Clears the auth cookie. |
+| `GET` | `/api/auth/me` | cookie or Bearer | Current user profile. |
+
+`POST /api/auth/signup` body:
+
+| Field | Type | Rules |
+|---|---|---|
+| `full_name` | string | 1–30 characters |
+| `phone` | string | exactly 10 digits |
+| `email` | string | valid email, lowercased |
+| `password` | string | 6–200 characters |
+| `college_name` | string | 1–150 characters |
+| `gender` | string | `male` \| `female` \| `unisex` |
+
+`POST /api/auth/login` body: `{ "email": string, "password": string }`
+
+### Data
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/health` | — | Liveness check |
+| `GET` | `/api/cities` | — | Cities with property counts |
+| `GET` | `/api/properties` | optional | List properties |
+| `GET` | `/api/properties/:id` | optional | Full property detail |
+| `POST` | `/api/properties/:id/interested` | required | Mark interested (idempotent) |
+| `DELETE` | `/api/properties/:id/interested` | required | Remove interest |
+| `GET` | `/api/me/interested` | required | Dashboard saved properties |
+
+`GET /api/properties` query parameters:
+
+| Parameter | Values | Default |
+|---|---|---|
+| `city` | city name (case-insensitive) or numeric id | all cities |
+| `gender` | `male` \| `female` \| `unisex` | all |
+| `sort` | `rent_asc` \| `rent_desc` \| `rating_desc` \| `name_asc` | `rating_desc` |
+
+Ratings are returned as numbers, with `totalRating` precomputed as the mean of
+cleanliness, food and safety rounded to one decimal.
+
+### Authentication mechanism
+
+On successful signup or login the API sets an `httpOnly`, `SameSite=Lax` cookie
+(`Secure` in production) containing a 7-day JWT. Because cookies are not scoped to
+ports, the Next.js server components can read the same cookie and relay it to the
+API, which is how the header and dashboard stay session-aware during SSR.
+
+`Authorization: Bearer <token>` is also accepted, for non-browser clients.
 
 ---
 
-## 👨‍💻 Author
+## Scripts
 
-**Shubham Deo**
-- GitHub: [@shubham-4556](https://github.com/shubham-4556)
+Run from the repository root:
 
----
-
-## 🙏 Acknowledgments
-
-- Bootstrap team for the CSS framework
-- Font Awesome for icons
-- Sample images from various free stock photo sites
-- Community contributors
-
----
-
-## 📞 Support
-
-For issues and feature requests, please use the [GitHub Issues](https://github.com/shubham-4556/PGLife/issues) page.
+| Script | Description |
+|---|---|
+| `npm run dev` | Start API and web together |
+| `npm run dev:api` / `npm run dev:web` | Start one app |
+| `npm run build` | Build both apps |
+| `npm start` | Run both production builds |
+| `npm run db:setup` | Run Prisma migrations and seed |
+| `npm run db:studio` | Open Prisma Studio |
+| `npm run lint` | ESLint (web) + typecheck (api) |
+| `npm run typecheck` | Typecheck both apps |
 
 ---
 
-*Last updated: September 2026*
+## Migrating from the PHP version
+
+What changed, and why:
+
+- **Sessions → JWT cookies.** PHP sessions are server-side state; a separate API
+  service needs a stateless token. The cookie is `httpOnly` so JavaScript cannot
+  read it.
+- **`glob()` image scanning → `property_images` table.** The PHP app listed a
+  directory at request time. Storing the paths makes the API self-describing and
+  keeps rendering independent of the filesystem.
+- **Misleading image extensions fixed.** 41 of the 42 "`.jpg`" property photos
+  were actually WebP, `about.jpg` was a PNG and `man.png` was a JPEG. Files were
+  renamed to match their real format so the server sends the correct
+  `Content-Type`.
+- **`next/image` for all imagery.** The originals are 2880–5000px photos
+  (44 MB total) that the PHP app served raw. They now go through the Next.js
+  image optimizer with `sizes` hints and lazy loading.
+- **Bootstrap 4 + jQuery → Tailwind CSS 4.** jQuery has no place in a React tree.
+  Modals became dedicated `/login` and `/signup` routes, the Bootstrap carousel
+  became a React component, and the filter/sort bar drives the URL query string
+  so views stay shareable and bookmarkable.
+- **Open Sans self-hosted.** Was loaded from the Google Fonts CDN; now built and
+  served by `next/font`, avoiding a third-party request and layout shift.
+- **Interest count fixed.** The old listing page counted interested users with a
+  nested loop and compared with `==`; it now uses a `_count` aggregate, so counts
+  no longer depend on how many rows happened to be loaded.
+- **Rating sort made real.** `?sort=rating_desc` orders by the mean of the three
+  rating columns via a parameterised raw query — Prisma's `orderBy` cannot sort
+  a computed column.
+- **Server components for data.** Public pages fetch from the API during SSR, so
+  listings are still server-rendered.
+
+Deliberately unchanged: routes' meaning, the visual design (brand red `#EA322E`
+and teal `#66C2BD` carried into the Tailwind theme), seed data, and the
+`img/` asset layout.
+
+---
+
+## Security Notes
+
+The original PHP version had the issues its own README called out. These are now
+fixed:
+
+| Before | Now |
+|---|---|
+| `sha1()` password hashing, no salt | `bcrypt` with 12 rounds |
+| SQL built by string interpolation → SQL injection | Prisma parameterised queries only |
+| No output escaping → XSS | React escapes by default; no `dangerouslySetInnerHTML` |
+| No CSRF protection | `SameSite=Lax` cookie |
+| Session cookie without flags | `httpOnly` + `SameSite` + `Secure` in production |
+| Credentials in `includes/database_connect.php` | Environment variables, `.env` gitignored |
+
+Remaining considerations before production:
+
+- Add rate limiting on `/api/auth/*` (e.g. `express-rate-limit`).
+- Set `secure: true` and a specific `CORS_ORIGINS` in production.
+- Consider refresh tokens or shorter lifetimes than the current 7 days.
+- The `deepmerge-ts` advisory that `npm audit` reports comes from the Prisma CLI
+  (`prisma` devDependency) and is not reachable from the running server. It will
+  clear when Prisma publishes a release that depends on `deepmerge-ts` 8+.
+
+> **Note:** the MySQL password that the old `includes/database_connect.php`
+> contained was committed to git history. Treat it as compromised and rotate it
+> if that database is still in use.
+
+---
+
+## License
+
+MIT.
+
+---
+
+## Author
+
+**Shubham Deo** — [@shubham-4556](https://github.com/shubham-4556)
