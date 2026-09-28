@@ -1,0 +1,46 @@
+# Render Blueprint for the PGLife API.
+#
+# Only the Express/Prisma API lives here. The Next.js frontend in web/ is
+# deployed to Vercel, which serves the app the browser actually loads.
+#
+# NOTE: Render's `databases:` block only provisions PostgreSQL. This project
+# uses MySQL, so DATABASE_URL must point at a MySQL host reachable from the
+# public internet - 127.0.0.1 will not resolve from inside Render.
+
+services:
+  - type: web
+    name: pglife-api
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: api
+    buildCommand: npm install && npm run prisma:generate && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+
+    # Monorepo guard: only rebuild the API when api/ changes. Commits that
+    # touch web/ or the docs will not trigger a needless deploy.
+    buildFilter:
+      paths:
+        - api/**
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Render generates a base64-encoded 256-bit value, which satisfies the
+      # 32-character minimum enforced by api/src/config.ts.
+      - key: JWT_SECRET
+        generateValue: true
+
+      # Prompted for in the Render dashboard on first sync. Must be a public
+      # MySQL URL, and the password must be percent-encoded (@ becomes %40).
+      - key: DATABASE_URL
+        sync: false
+
+      # Comma-separated allowlist of browser origins, e.g.
+      # https://your-app.vercel.app. Defaults to http://localhost:3000 when
+      # unset, which will not match a Vercel deployment.
+      - key: CORS_ORIGINS
+        sync: false
