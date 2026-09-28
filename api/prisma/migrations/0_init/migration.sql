@@ -5,28 +5,41 @@
 --
 -- Marked as applied with `prisma migrate resolve --applied 0_init` against the
 -- existing database, so adopting it did not rewrite or drop any live data.
+--
+-- Table-level collation is utf8mb4_unicode_ci rather than the MySQL 8 default
+-- utf8mb4_0900_ai_ci, so this baseline also replays on MariaDB. Collation
+-- choice only affects sort order and comparisons, not existing rows.
+--
+-- Statements are ordered so that every table is created after the tables it
+-- references. The captured DDL listed `interested_users_properties` first, which
+-- fails on a fresh database with errno 150, because MySQL requires its
+-- referenced tables to already exist. That never surfaced while the migration
+-- was only ever resolved-as-applied against the live database.
 
+CREATE TABLE `cities` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `amenities` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `type` varchar(50) NOT NULL,
   `icon` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `cities` (
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `users` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `full_name` varchar(255) NOT NULL,
+  `phone` varchar(20) NOT NULL,
+  `gender` varchar(10) NOT NULL,
+  `college_name` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `interested_users_properties` (
-  `user_id` int NOT NULL,
-  `property_id` int NOT NULL,
-  PRIMARY KEY (`user_id`,`property_id`),
-  KEY `property_id` (`property_id`),
-  CONSTRAINT `interested_users_properties_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
-  CONSTRAINT `interested_users_properties_ibfk_2` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `properties` (
   `id` int NOT NULL AUTO_INCREMENT,
   `city_id` int NOT NULL,
@@ -41,7 +54,7 @@ CREATE TABLE `properties` (
   PRIMARY KEY (`id`),
   KEY `city_id` (`city_id`),
   CONSTRAINT `properties_ibfk_1` FOREIGN KEY (`city_id`) REFERENCES `cities` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `properties_amenities` (
   `property_id` int NOT NULL,
   `amenity_id` int NOT NULL,
@@ -49,7 +62,15 @@ CREATE TABLE `properties_amenities` (
   KEY `amenity_id` (`amenity_id`),
   CONSTRAINT `properties_amenities_ibfk_1` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`),
   CONSTRAINT `properties_amenities_ibfk_2` FOREIGN KEY (`amenity_id`) REFERENCES `amenities` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `interested_users_properties` (
+  `user_id` int NOT NULL,
+  `property_id` int NOT NULL,
+  PRIMARY KEY (`user_id`,`property_id`),
+  KEY `property_id` (`property_id`),
+  CONSTRAINT `interested_users_properties_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `interested_users_properties_ibfk_2` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `testimonials` (
   `id` int NOT NULL AUTO_INCREMENT,
   `property_id` int NOT NULL,
@@ -58,15 +79,4 @@ CREATE TABLE `testimonials` (
   PRIMARY KEY (`id`),
   KEY `property_id` (`property_id`),
   CONSTRAINT `testimonials_ibfk_1` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `users` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `email` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `full_name` varchar(255) NOT NULL,
-  `phone` varchar(20) NOT NULL,
-  `gender` varchar(10) NOT NULL,
-  `college_name` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

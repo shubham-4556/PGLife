@@ -14,7 +14,13 @@ services:
     plan: free
     region: singapore
     rootDir: api
-    buildCommand: npm install && npm run prisma:generate && npm run build
+    # --include=dev is load-bearing, not cargo cult. NODE_ENV=production below is
+    # set for the build environment too, and npm responds to that by omitting
+    # devDependencies. That drops every @types/* package and `tsc` then fails
+    # with a wall of TS7016/TS2584 errors. --include=dev overrides the omission.
+    # (prisma and typescript survive NODE_ENV=production only by accident, since
+    # @prisma/client peer-depends on both.)
+    buildCommand: npm install --include=dev && npm run prisma:generate && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeployTrigger: commit
